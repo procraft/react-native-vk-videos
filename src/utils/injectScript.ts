@@ -70,6 +70,7 @@ export function createInjectInitScript(src: string, hideControls?: boolean) {
         });
 
         sendEvent('isLive', null, cur.player.isActiveLive());
+        sendEvent('isMuted', null, cur.player.isMuted());
 
         var availableQualities = cur.player.getAvailableQualities();
         if (availableQualities != null && availableQualities.length > 0) {
@@ -87,6 +88,10 @@ export function createInjectInitScript(src: string, hideControls?: boolean) {
 
       player.on("started", (state) => {
         sendEvent('started', null, state);
+      });
+
+      player.on("volumechange", (state) => {
+        sendEvent('volumechange', null, state);
       });
 
       player.on("resumed", (state) => {
@@ -175,5 +180,19 @@ export function createInjectIsPausedScript(id: number) {
   return {
     eventName: 'isPaused',
     script: createInjectScript(`sendEvent('isPaused', ${id}, cur.player.state != 'playing');`),
+  };
+}
+
+export function createInjectMuteScript(id: number) {
+  return {
+    eventName: 'mute',
+    script: createInjectScript(`sendEvent('mute', ${id}, player.mute() || true);`),
+  };
+}
+
+export function createInjectUnmuteScript(id: number) {
+  return {
+    eventName: 'unmute',
+    script: createInjectScript(`sendEvent('unmute', ${id}, player.unmute() || true);`),
   };
 }

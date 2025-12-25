@@ -42,6 +42,7 @@ export enum VkVideoEventName {
   PLAY = 'play',
   PAUSE = 'pause',
   ISLIVE = 'isLive',
+  ISMUTED = 'isMuted',
   SETQUALITY = 'setQuality',
   SEEK = 'seek',
   MEDIAWAITING = 'mediaWaiting',
@@ -68,6 +69,7 @@ export type VkVideoEventData = {
   [VkVideoEventName.PLAY]: true;
   [VkVideoEventName.PAUSE]: true;
   [VkVideoEventName.ISLIVE]: boolean;
+  [VkVideoEventName.ISMUTED]: boolean;
   [VkVideoEventName.SETQUALITY]: true;
   [VkVideoEventName.SEEK]: true;
   [VkVideoEventName.MEDIAWAITING]: { stalled: boolean; buffering: boolean };

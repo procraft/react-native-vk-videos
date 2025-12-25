@@ -8,6 +8,7 @@ export interface VkVideoPlayerProps {
   webviewProps?: ComponentProps<typeof WebView>;
   paused?: boolean;
   debug?: boolean;
+  autoUnmute?: boolean;
   onEvent?: (event: VkPlayerEvent) => void;
 }
 
@@ -17,4 +18,6 @@ export interface VkVideoPlayerHandle {
   setQuality: (quality: VkVideoQuality) => Promise<void>;
   seek: (time: number) => Promise<void>;
   seekLive: () => Promise<void>;
+  mute: () => Promise<void>;
+  unmute: () => Promise<void>;
 }

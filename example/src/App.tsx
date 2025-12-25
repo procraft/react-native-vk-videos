@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import {
   VkVideoEventName,
   VkVideoPlayer,
   VkVideoQuality,
   type VkVideoPlayerHandle,
 } from '@procraft/react-native-vk-video';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 export default function App() {
   const playerRef = useRef<VkVideoPlayerHandle>(null);
@@ -19,6 +19,7 @@ export default function App() {
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLive, setIsLive] = useState(false);
+  const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(true);
   const [videoPaused, setVideoPaused] = useState(false);
   const [currentQuality, setCurrentQuality] = useState(VkVideoQuality.AUTO);
@@ -37,6 +38,8 @@ export default function App() {
       playerRef.current?.on(VkVideoEventName.PAUSED, () => setVideoPaused(true)),
       playerRef.current?.on(VkVideoEventName.ENDED, () => setVideoPaused(true)),
       playerRef.current?.on(VkVideoEventName.ISLIVE, ({ data }) => setIsLive(data)),
+      playerRef.current?.on(VkVideoEventName.VOLUMECHANGE, ({ data }) => setMuted(data.muted)),
+      playerRef.current?.on(VkVideoEventName.ISMUTED, ({ data }) => setMuted(data)),
       playerRef.current?.on(VkVideoEventName.TIMEUPDATE, ({ data }) => {
         setTime(data.time);
         setDuration(data.duration);
@@ -66,8 +69,16 @@ export default function App() {
     }
     setPaused((p) => !p);
   }, [duration, isLive, seekLive, time]);
+  const toggleMute = () => {
+    if (muted) {
+      playerRef.current?.unmute();
+    } else {
+      playerRef.current?.mute();
+    }
+  };
 
   const sources: [name: string, src: string][] = [
+    ['LiveEnded', 'https://vk.com/video_ext.php?oid=-215290539&id=456239246&hash=cc06ec4680bcbc3b'],
     ['Video', 'https://vk.com/video_ext.php?oid=-227884247&id=456239020&hd=2&hash=0b5f32375446d22d&autoplay=1'],
     ['Live', 'https://vk.com/video_ext.php?oid=-339767&id=456244698&hd=2&autoplay=1'],
     ['Error', 'https://vk.com/video_ext.php?oid=-3397&id=456244698&hd=2&autoplay=1'],
@@ -118,7 +129,7 @@ export default function App() {
           <Text style={{ margin: 8 }}>ERROR: {isError.toString()}</Text>
           <Text style={{ margin: 8 }}>PAUSED: {videoPaused.toString()}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
           <Button onPress={togglePause}>{paused ? 'Play' : 'Pause'}</Button>
           {isLive && (
             <Button borderColor={time === duration ? 'red' : 'black'} onPress={seekLive}>
@@ -144,6 +155,7 @@ export default function App() {
               <Text style={{ padding: 8 }}>+15</Text>
             </Pressable>
           </View>
+          <Button onPress={toggleMute}>{muted ? 'Unmute' : 'Mute'}</Button>
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {videoQualities.map((quality) => (
