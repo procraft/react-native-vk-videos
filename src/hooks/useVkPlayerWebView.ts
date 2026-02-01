@@ -42,6 +42,7 @@ export function useVkPlayerWebView(
   // Sync paused state
   const updatePlayerPaused = useCallback(async () => {
     const response = await injectScript<VkVideoEventName.ISPAUSED>(createInjectIsPausedScript);
+    console.log(response);
     if (response.data !== paused) {
       if (paused) {
         injectScript(createInjectPauseScript);

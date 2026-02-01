@@ -22,10 +22,12 @@ export function createInjectInitScript(src: string, hideControls?: boolean) {
     window.ReactNativeWebView.postMessage(JSON.stringify({id, name, data}))
   }
 
+  var videoElContainer;
+  var videoEl;
   document.addEventListener('readystatechange', (event) => {
     if (event.target.readyState === "complete") {
       setTimeout(() => {
-        if (cur.player == null) {
+        if (player == null) {
           var errMessage = 'Player not found. Possibly invalid src.';
 
           var errBox = document.querySelector('#video_ext_msg');
@@ -40,11 +42,10 @@ export function createInjectInitScript(src: string, hideControls?: boolean) {
   });
 
   const hideControlls = () => {
-    const videoplayerUI = document.querySelector('.videoplayer_ui');
-    const elements = videoplayerUI.querySelectorAll('*:not(.videoplayer_thumb)');
-    elements.forEach(element => {
-      element.style.opacity = '0';
-    });
+    videoElContainer.querySelector('.wrapper-top-left').style.opacity = '0';
+    videoElContainer.querySelector('.wrapper-top-right').style.opacity = '0';
+    videoElContainer.querySelector('.wrapper-middle').style.opacity = '0';
+    videoElContainer.querySelector('.wrapper-bottom').style.opacity = '0';
   }
 
   script.onload = function() {
@@ -56,38 +57,46 @@ export function createInjectInitScript(src: string, hideControls?: boolean) {
     try {
       window.player = VK.VideoPlayer(fakeIframe);
       
-      player.on("inited", (state) => {
+      var wasInited = false;
+      var onInit = (state) => {
+        if (wasInited) {
+          return;
+        }
+        wasInited = true;
         player.unmute();
         // player.mute()
 
-        var videoEl = cur.player.media.videoEl;
+        videoElContainer = document.getElementsByClassName('shadow-root-container')[0].shadowRoot
+        videoEl = videoElContainer.querySelector('video');
         videoEl.setAttribute('playsinline', 'true');
         videoEl.setAttribute('pip', 'true');
         videoEl.addEventListener("loadeddata", () => {
-          if (cur.player.media.videoEl.videoHeight > 0) {
-            sendEvent('videoSize', null, {width: cur.player.media.videoEl.videoWidth, height: cur.player.media.videoEl.videoHeight})
+          if (videoEl.videoHeight > 0) {
+            sendEvent('videoSize', null, {width: videoEl.videoWidth, height: videoEl.videoHeight})
           }
         });
 
-        sendEvent('isLive', null, cur.player.isActiveLive());
-        sendEvent('isMuted', null, cur.player.isMuted());
+        // sendEvent('isLive', null, cur.player.isActiveLive());
+        sendEvent('isMuted', null, player.isMuted());
 
-        var availableQualities = cur.player.getAvailableQualities();
-        if (availableQualities != null && availableQualities.length > 0) {
-          sendEvent('availableQualities', null, availableQualities.filter((q) => q !== 0));
-        }
+        // var availableQualities = cur.player.getAvailableQualities();
+        // if (availableQualities != null && availableQualities.length > 0) {
+        //   sendEvent('availableQualities', null, availableQualities.filter((q) => q !== 0));
+        // }
 
-        cur.player.on("media.waiting", (buffering, stalled) => sendEvent('mediaWaiting', null, {buffering, stalled}));
+        // cur.player.on("media.waiting", (buffering, stalled) => sendEvent('mediaWaiting', null, {buffering, stalled}));
 
-        cur.player.on("qualitiesListChange", (qualities) => {
-          sendEvent('availableQualities', null, qualities.filter((q) => q !== 0))
-        });
+        // cur.player.on("qualitiesListChange", (qualities) => {
+        //   sendEvent('availableQualities', null, qualities.filter((q) => q !== 0))
+        // });
         ${hideControls ? `hideControlls()` : ''}
         sendEvent('inited', null, state);
-      });
+      };
+      player.on("inited", onInit);
 
       player.on("started", (state) => {
         sendEvent('started', null, state);
+        onInit(state);
       });
 
       player.on("volumechange", (state) => {
@@ -136,7 +145,7 @@ export function createInjectGetAvailableQualitiesScript(id: number) {
   return {
     eventName: 'availableQualities',
     script: createInjectScript(
-      `sendEvent('availableQualities', ${id}, cur.player.getAvailableQualities().filter(q => q != 0));`
+      `sendEvent('availableQualities', ${id}, player.getAvailableQualities().filter(q => q != 0));`
     ),
   };
 }
@@ -144,21 +153,21 @@ export function createInjectGetAvailableQualitiesScript(id: number) {
 export function createInjectPlayScript(id: number) {
   return {
     eventName: 'play',
-    script: createInjectScript(`sendEvent('play', ${id}, cur.player.play() || true);`),
+    script: createInjectScript(`sendEvent('play', ${id}, player.play() || true);`),
   };
 }
 
 export function createInjectPauseScript(id: number) {
   return {
     eventName: 'pause',
-    script: createInjectScript(`sendEvent('pause', ${id}, cur.player.pause() || true);`),
+    script: createInjectScript(`sendEvent('pause', ${id}, player.pause() || true);`),
   };
 }
 
 export function createInjectSetQualityScript(id: number, quality: number) {
   return {
     eventName: 'setQuality',
-    script: createInjectScript(`sendEvent('setQuality', ${id}, cur.player.setQuality(${quality}) || true);`),
+    script: createInjectScript(`sendEvent('setQuality', ${id}, player.setQuality(${quality}) || true);`),
   };
 }
 
@@ -179,7 +188,7 @@ export function createInjectSeekLiveScript(id: number) {
 export function createInjectIsPausedScript(id: number) {
   return {
     eventName: 'isPaused',
-    script: createInjectScript(`sendEvent('isPaused', ${id}, cur.player.state != 'playing');`),
+    script: createInjectScript(`sendEvent('isPaused', ${id}, player.getState() != 'playing');`),
   };
 }
 
